@@ -43,6 +43,15 @@ function moneyOf(event, p) {
   return event.buyIn + p.rebuys * event.buyIn + (p.addon ? event.buyIn : 0);
 }
 
+// Выигрыш по месту: банк делится 50/30/20 на топ-3.
+// 1-е место получает остаток, чтобы сумма призов точно равнялась банку.
+function payoutOf(pot, place) {
+  if (place === 2) return Math.round(pot * 0.3);
+  if (place === 3) return Math.round(pot * 0.2);
+  if (place === 1) return pot - Math.round(pot * 0.3) - Math.round(pot * 0.2);
+  return 0;
+}
+
 function nameOf(id) {
   const p = data.players.find((x) => x.id === id);
   return p ? p.name : '—';
@@ -114,12 +123,14 @@ function computeStats() {
     stats[p.id] = {
       id: p.id, name: p.name, games: 0,
       first: 0, second: 0, third: 0,
-      rebuys: 0, addons: 0, contributed: 0,
+      rebuys: 0, addons: 0, contributed: 0, won: 0,
     };
   });
   data.events
     .filter((ev) => ev.status === 'finished')
     .forEach((ev) => {
+      let pot = 0;
+      ev.participants.forEach((p) => (pot += moneyOf(ev, p)));
       ev.participants.forEach((p) => {
         const s = stats[p.playerId];
         if (!s) return; // игрок мог быть удалён — пропускаем
@@ -130,6 +141,7 @@ function computeStats() {
         s.rebuys += p.rebuys;
         if (p.addon) s.addons += 1;
         s.contributed += moneyOf(ev, p);
+        s.won += payoutOf(pot, p.place);
       });
     });
   return Object.values(stats).sort(
@@ -163,6 +175,7 @@ function renderStats() {
             <th class="num">Ребаи</th>
             <th class="num">Аддоны</th>
             <th class="num">Внёс, €</th>
+            <th class="num">Вынес, €</th>
           </tr>
         </thead>
         <tbody>
@@ -177,6 +190,7 @@ function renderStats() {
               <td class="num">${r.rebuys}</td>
               <td class="num">${r.addons}</td>
               <td class="num">${r.contributed}</td>
+              <td class="num">${r.won}</td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -222,6 +236,15 @@ function renderGame() {
   const byId = {};
   open.participants.forEach((p) => (byId[p.playerId] = p));
 
+  // Деньги одного участника: бай-ин + ребаи + аддон.
+  const buyIn0 = Number(open.buyIn) || 0;
+  const moneyOf = (cur) => {
+    if (!cur) return 0;
+    const rebuys = Number(cur.rebuys) || 0;
+    return buyIn0 + rebuys * buyIn0 + (cur.addon ? buyIn0 : 0);
+  };
+  let pot0 = 0;
+
   el.innerHTML = `
     <h2 class="section-title">Текущая игра <span class="badge badge-open">идёт</span></h2>
     <div class="card">
@@ -244,6 +267,8 @@ function renderGame() {
         ${data.players.map((pl) => {
           const cur = byId[pl.id];
           const present = !!cur;
+          const money = moneyOf(cur);
+          pot0 += money;
           return `
           <div class="player-row ${present ? '' : 'absent'}" data-pid="${pl.id}">
             <div class="player-name">${esc(pl.name)}</div>
@@ -255,12 +280,12 @@ function renderGame() {
               <label>Ребаи<input type="number" class="rebuys" min="0" value="${cur ? cur.rebuys : 0}" /></label>
               <label class="check">Аддон<input type="checkbox" class="addon" ${cur && cur.addon ? 'checked' : ''}/></label>
               <span class="spacer"></span>
-              <span class="player-money">0 €</span>
+              <span class="player-money">${money} €</span>
             </div>
           </div>`;
         }).join('')}
       </div>
-      <div class="pot-line"><span>Банк вечера</span><span id="pot-total">0 €</span></div>
+      <div class="pot-line"><span>Банк вечера</span><span id="pot-total">${pot0} €</span></div>
     </div>
 
     <div class="card">
@@ -283,18 +308,24 @@ function renderGame() {
 
   // Пересчёт денег при любом изменении.
   const recalc = () => {
-    const buyIn = Number($('#game-buyin').value) || 0;
+    const buyInEl = $('#game-buyin');
+    const buyIn = Number(buyInEl && buyInEl.value) || 0;
     let pot = 0;
     document.querySelectorAll('.player-row').forEach((row) => {
-      const present = row.querySelector('.present').checked;
+      const presentEl = row.querySelector('.present');
+      const present = presentEl ? presentEl.checked : false;
       row.classList.toggle('absent', !present);
-      const rebuys = Number(row.querySelector('.rebuys').value) || 0;
-      const addon = row.querySelector('.addon').checked;
+      const rebuysEl = row.querySelector('.rebuys');
+      const rebuys = Number(rebuysEl && rebuysEl.value) || 0;
+      const addonEl = row.querySelector('.addon');
+      const addon = addonEl ? addonEl.checked : false;
       const m = present ? buyIn + rebuys * buyIn + (addon ? buyIn : 0) : 0;
-      row.querySelector('.player-money').textContent = m + ' €';
+      const moneyEl = row.querySelector('.player-money');
+      if (moneyEl) moneyEl.textContent = m + ' €';
       pot += m;
     });
-    $('#pot-total').textContent = pot + ' €';
+    const potEl = $('#pot-total');
+    if (potEl) potEl.textContent = pot + ' €';
   };
   el.querySelectorAll('input').forEach((inp) => inp.addEventListener('input', recalc));
   recalc();
@@ -407,7 +438,7 @@ function renderHistory() {
         </div>
         <div class="table-wrap" style="margin-top:10px;">
           <table>
-            <thead><tr><th>Место</th><th>Игрок</th><th class="num">Ребаи</th><th class="num">Аддон</th><th class="num">Внёс, €</th></tr></thead>
+            <thead><tr><th>Место</th><th>Игрок</th><th class="num">Ребаи</th><th class="num">Аддон</th><th class="num">Внёс, €</th><th class="num">Вынес, €</th></tr></thead>
             <tbody>
               ${sorted.map((p) => `
                 <tr>
@@ -416,7 +447,8 @@ function renderHistory() {
                   <td class="num">${p.rebuys}</td>
                   <td class="num">${p.addon ? 'да' : '—'}</td>
                   <td class="num">${moneyOf(ev, p)}</td>
-                </tr>`).join('') || '<tr><td colspan="5" class="muted">Нет участников</td></tr>'}
+                  <td class="num">${payoutOf(pot, p.place)}</td>
+                </tr>`).join('') || '<tr><td colspan="6" class="muted">Нет участников</td></tr>'}
             </tbody>
           </table>
         </div>
