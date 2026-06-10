@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiltometer</title>
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===================== Экран входа ===================== -->
+  <div id="login-screen" class="login-screen">
+    <form id="login-form" class="login-card">
+      <img src="logo.svg" alt="Tiltometer" class="logo-mark logo-lg" />
+      <h1 class="brand">Tiltometer</h1>
+      <p class="muted">Введите пароль, чтобы войти</p>
+      <input id="login-password" type="password" placeholder="Пароль" autocomplete="current-password" />
+      <button type="submit" class="btn btn-primary">Войти</button>
+      <p id="login-error" class="error"></p>
+    </form>
+  </div>
+
+  <!-- ===================== Приложение ===================== -->
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <span class="brand-lockup">
+        <img src="logo.svg" alt="" class="logo-mark logo-sm" />
+        <span class="brand">Tiltometer</span>
+      </span>
+      <button id="logout-btn" class="btn btn-ghost">Выйти</button>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="stats">Статистика</button>
+      <button class="tab" data-tab="game">Текущая игра</button>
+      <button class="tab" data-tab="history">История</button>
+      <button class="tab" data-tab="players">Игроки</button>
+    </nav>
+
+    <main class="content">
+      <!-- Статистика -->
+      <section id="tab-stats" class="tab-panel"></section>
+      <!-- Текущая игра -->
+      <section id="tab-game" class="tab-panel hidden"></section>
+      <!-- История -->
+      <section id="tab-history" class="tab-panel hidden"></section>
+      <!-- Игроки -->
+      <section id="tab-players" class="tab-panel hidden"></section>
+    </main>
+  </div>
+
+  <!-- Всплывающее уведомление -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
