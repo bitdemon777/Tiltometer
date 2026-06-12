@@ -225,7 +225,7 @@ function renderGame() {
           </div>
         </div>
         <div style="margin-top:14px;">
-          <button class="btn btn-primary" id="create-game-btn">Начать игру</button>
+          <button class="btn btn-primary" id="create-game-btn" style="width:100%;">Начать игру</button>
         </div>
       </div>`;
     $('#create-game-btn').addEventListener('click', createGame);

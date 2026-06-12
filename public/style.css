@@ -231,11 +231,10 @@ td.num, th.num { text-align: right; }
 }
 
 /* ---------- Текущая игра: дата и бай-ин ---------- */
-/* Бай-ин — к левому краю, дата — к правому; разнесены, фиксированные ширины,
+/* Дата — к левому краю, бай-ин — к правому; разнесены, фиксированные ширины,
    чтобы поля не налезали друг на друга. Без рамок, с мягкой заливкой. */
 .game-meta { gap: 12px; align-items: flex-end; justify-content: space-between; }
 .game-meta > div { flex: 0 1 auto; min-width: 0; }
-.game-meta .field-date { order: 2; } /* дата уходит к правому краю */
 .game-meta label { display: block; text-align: left; margin-bottom: 4px; }
 .game-meta .field-date input { width: 150px; max-width: 100%; }
 .game-meta .field-buyin input { width: 110px; max-width: 100%; }
