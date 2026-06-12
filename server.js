@@ -33,8 +33,18 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const APP_PASSWORD = process.env.APP_PASSWORD || 'changeme'; // ОБЯЗАТЕЛЬНО задайте свой в .env
+const APP_PASSWORD = process.env.APP_PASSWORD;
 const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Без пароля запускаться нельзя: иначе приложение молча работало бы с известным
+// паролем и было бы открыто всем. Останавливаемся сразу с понятной ошибкой.
+if (!APP_PASSWORD || APP_PASSWORD === 'changeme') {
+  console.error(
+    'ОШИБКА: переменная APP_PASSWORD не задана (или равна "changeme").\n' +
+      'Задайте свой пароль в .env (локально) или в настройках окружения хостинга.'
+  );
+  process.exit(1);
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -66,11 +76,52 @@ function money(event, p) {
 }
 
 // ----------------------------- Вход ----------------------------------------
+// Защита от перебора пароля: считаем неудачные попытки по IP. После LIMIT
+// неудач подряд блокируем вход на WINDOW_MS. Хранится в памяти — для домашней
+// нагрузки этого достаточно, при перезапуске сервера счётчики сбрасываются.
+const LOGIN_LIMIT = 5; // сколько неудачных попыток разрешаем
+const LOGIN_WINDOW_MS = 60 * 1000; // на сколько блокируем (1 минута)
+const loginAttempts = new Map(); // ip -> { count, firstAt }
+
+function loginGuard(ip) {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  // Окно истекло — забываем прошлые попытки.
+  if (entry && now - entry.firstAt > LOGIN_WINDOW_MS) {
+    loginAttempts.delete(ip);
+    return { blocked: false };
+  }
+  if (entry && entry.count >= LOGIN_LIMIT) {
+    const retryMs = LOGIN_WINDOW_MS - (now - entry.firstAt);
+    return { blocked: true, retrySec: Math.ceil(retryMs / 1000) };
+  }
+  return { blocked: false };
+}
+
+function noteFailedLogin(ip) {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (entry && now - entry.firstAt <= LOGIN_WINDOW_MS) {
+    entry.count += 1;
+  } else {
+    loginAttempts.set(ip, { count: 1, firstAt: now });
+  }
+}
+
 // Проверка пароля. Фронтенд после успеха хранит пароль и шлёт его в заголовке.
 app.post('/api/login', (req, res) => {
+  const ip = req.ip;
+  const guard = loginGuard(ip);
+  if (guard.blocked) {
+    return res.status(429).json({
+      error: `Слишком много попыток. Попробуйте через ${guard.retrySec} сек.`,
+    });
+  }
   if ((req.body.password || '') === APP_PASSWORD) {
+    loginAttempts.delete(ip); // успешный вход — сбрасываем счётчик
     return res.json({ ok: true });
   }
+  noteFailedLogin(ip);
   res.status(401).json({ error: 'Неверный пароль' });
 });
 
