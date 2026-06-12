@@ -98,7 +98,8 @@ async function loadData() {
 
 // ------------------------------ Вкладки ------------------------------------
 document.querySelectorAll('.tab').forEach((btn) => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
+    if (activeTab === 'game') await flushAutoSave(); // не теряем введённое при уходе с вкладки
     activeTab = btn.dataset.tab;
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
     render();
@@ -290,11 +291,12 @@ function renderGame() {
 
     <div class="card">
       <div class="row">
-        <button class="btn btn-primary" id="save-game-btn">Сохранить</button>
         <button class="btn btn-success" id="finish-game-btn">Завершить игру</button>
+        <span id="save-status" class="muted" style="align-self:center;"></span>
         <span class="spacer"></span>
         <button class="btn btn-danger btn-sm" id="delete-game-btn">Удалить игру</button>
       </div>
+      <p class="muted" style="margin:8px 0 0;">Изменения сохраняются автоматически.</p>
     </div>
 
     <div class="card">
@@ -327,10 +329,14 @@ function renderGame() {
     const potEl = $('#pot-total');
     if (potEl) potEl.textContent = pot + ' €';
   };
-  el.querySelectorAll('input').forEach((inp) => inp.addEventListener('input', recalc));
+  el.querySelectorAll('input').forEach((inp) =>
+    inp.addEventListener('input', () => {
+      recalc();
+      scheduleAutoSave(open.id);
+    })
+  );
   recalc();
 
-  $('#save-game-btn').addEventListener('click', () => saveGame(open.id, false));
   $('#finish-game-btn').addEventListener('click', () => saveGame(open.id, true));
   $('#delete-game-btn').addEventListener('click', () => deleteGame(open.id));
   $('#send-email-btn').addEventListener('click', () => sendEmail(open.id));
@@ -363,7 +369,67 @@ async function createGame() {
   } catch (e) { showToast(e.message, true); }
 }
 
+// ----------------------- Автосохранение текущей игры -----------------------
+// Текущая игра сохраняется на сервере автоматически: с задержкой после ввода
+// и принудительно при уходе с вкладки. Отдельной кнопки «Сохранить» нет.
+let autoSaveTimer = null;
+let autoSaveInFlight = false;
+
+function setSaveStatus(text) {
+  const el = $('#save-status');
+  if (el) el.textContent = text;
+}
+
+function cancelAutoSave() {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+}
+
+// Запланировать сохранение через небольшую паузу после последнего ввода.
+function scheduleAutoSave(id) {
+  setSaveStatus('Изменения…');
+  cancelAutoSave();
+  autoSaveTimer = setTimeout(() => autoSaveGame(id), 700);
+}
+
+async function autoSaveGame(id) {
+  cancelAutoSave();
+  // Поля могли исчезнуть, если вкладку уже перерисовали.
+  const dateEl = $('#game-date');
+  const buyInEl = $('#game-buyin');
+  if (!dateEl || !buyInEl) return;
+  if (autoSaveInFlight) { scheduleAutoSave(id); return; } // занято — повторим позже
+  autoSaveInFlight = true;
+  setSaveStatus('Сохранение…');
+  try {
+    const updated = await api('PUT', '/api/events/' + id, {
+      date: dateEl.value,
+      buyIn: Number(buyInEl.value),
+      participants: collectParticipants(),
+    });
+    // Обновляем локальную копию, чтобы при возврате на вкладку данные были на месте.
+    const idx = data.events.findIndex((e) => e.id === id);
+    if (idx !== -1) data.events[idx] = updated;
+    setSaveStatus('Сохранено');
+  } catch (e) {
+    setSaveStatus('Ошибка сохранения');
+    showToast(e.message, true);
+  } finally {
+    autoSaveInFlight = false;
+  }
+}
+
+// Принудительно дописать незаписанные изменения (например, при уходе с вкладки).
+async function flushAutoSave() {
+  if (!autoSaveTimer) return; // нечего сохранять
+  const open = data.events.find((ev) => ev.status === 'open');
+  if (open) await autoSaveGame(open.id);
+}
+
 async function saveGame(id, finish) {
+  cancelAutoSave(); // чтобы отложенное автосохранение не сработало после завершения
   try {
     await api('PUT', '/api/events/' + id, {
       date: $('#game-date').value,
@@ -383,6 +449,7 @@ async function saveGame(id, finish) {
 
 async function deleteGame(id) {
   if (!confirm('Удалить текущую игру? Данные не сохранятся.')) return;
+  cancelAutoSave();
   try {
     await api('DELETE', '/api/events/' + id);
     await loadData();
