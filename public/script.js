@@ -311,7 +311,7 @@ function renderGame() {
     const buyInEl = $('#game-buyin');
     const buyIn = Number(buyInEl && buyInEl.value) || 0;
     let pot = 0;
-    document.querySelectorAll('.player-row').forEach((row) => {
+    document.querySelectorAll('#tab-game .player-row').forEach((row) => {
       const presentEl = row.querySelector('.present');
       const present = presentEl ? presentEl.checked : false;
       row.classList.toggle('absent', !present);
@@ -338,7 +338,7 @@ function renderGame() {
 
 function collectParticipants() {
   const participants = [];
-  document.querySelectorAll('.player-row').forEach((row) => {
+  document.querySelectorAll('#tab-game .player-row').forEach((row) => {
     if (!row.querySelector('.present').checked) return;
     const placeVal = row.querySelector('.place').value;
     participants.push({
