@@ -164,7 +164,7 @@ function renderStats() {
   el.innerHTML = `
     <h2 class="section-title">Таблица лидеров</h2>
     <div class="card table-wrap">
-      <table>
+      <table class="stats-table">
         <thead>
           <tr>
             <th class="rank">#</th>
@@ -175,8 +175,8 @@ function renderStats() {
             <th class="num">🥉</th>
             <th class="num">Ребаи</th>
             <th class="num">Аддоны</th>
-            <th class="num">Внёс, €</th>
-            <th class="num">Вынес, €</th>
+            <th class="num">Внёс</th>
+            <th class="num">Вынес</th>
           </tr>
         </thead>
         <tbody>
@@ -214,12 +214,12 @@ function renderGame() {
       <h2 class="section-title">Текущая игра</h2>
       <div class="card">
         <h2>Начать новую игру</h2>
-        <div class="row">
-          <div style="flex:2 1 160px;">
+        <div class="row game-meta">
+          <div class="field-date">
             <label class="muted">Дата</label>
             <input type="date" id="new-date" value="${todayISO()}" />
           </div>
-          <div style="flex:1 1 100px;">
+          <div class="field-buyin">
             <label class="muted">Бай-ин, €</label>
             <input type="number" id="new-buyin" min="1" value="${data.settings.defaultBuyIn}" />
           </div>
@@ -249,12 +249,12 @@ function renderGame() {
   el.innerHTML = `
     <h2 class="section-title">Текущая игра <span class="badge badge-open">идёт</span></h2>
     <div class="card">
-      <div class="row">
-        <div style="flex:2 1 160px;">
+      <div class="row game-meta">
+        <div class="field-date">
           <label class="muted">Дата</label>
           <input type="date" id="game-date" value="${open.date}" />
         </div>
-        <div style="flex:1 1 100px;">
+        <div class="field-buyin">
           <label class="muted">Бай-ин, €</label>
           <input type="number" id="game-buyin" min="1" value="${open.buyIn}" />
         </div>
@@ -504,8 +504,8 @@ function renderHistory() {
           <span class="muted">Бай-ин ${ev.buyIn} € · Банк ${pot} €</span>
         </div>
         <div class="table-wrap" style="margin-top:10px;">
-          <table>
-            <thead><tr><th>Место</th><th>Игрок</th><th class="num">Ребаи</th><th class="num">Аддон</th><th class="num">Внёс, €</th><th class="num">Вынес, €</th></tr></thead>
+          <table class="history-table">
+            <thead><tr><th>Место</th><th>Игрок</th><th class="num">Ребаи</th><th class="num">Аддон</th><th class="num">Внёс</th><th class="num">Вынес</th></tr></thead>
             <tbody>
               ${sorted.map((p) => `
                 <tr>

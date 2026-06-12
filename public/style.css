@@ -229,3 +229,27 @@ td.num, th.num { text-align: right; }
   .player-row { grid-template-columns: 160px 1fr auto; }
   .player-controls { grid-column: auto; }
 }
+
+/* ---------- Текущая игра: дата и бай-ин ---------- */
+/* Поля не растягиваем на всю ширину — фиксированная ширина, выравнивание слева,
+   чтобы на мобильном «Дата» и «Бай-ин» не налезали друг на друга. */
+.game-meta { gap: 12px; align-items: flex-end; }
+.game-meta > div { flex: 0 0 auto; }
+.game-meta label { display: block; text-align: left; margin-bottom: 4px; }
+.game-meta .field-date input { width: 150px; max-width: 100%; }
+.game-meta .field-buyin input { width: 110px; }
+
+/* ---------- История и Статистика: выравнивание и компактность ---------- */
+.history-table, .stats-table { font-size: 0.86rem; }
+.history-table th, .history-table td,
+.stats-table th, .stats-table td { padding: 8px 6px; text-align: center; } /* значения по центру под заголовками */
+.history-table th, .stats-table th { white-space: normal; font-size: 0.7rem; letter-spacing: 0; } /* заголовки мельче, чтобы названия влезали */
+/* Колонка «Игрок» (2-я) — по левому краю и с переносом длинных имён */
+.history-table th:nth-child(2), .history-table td:nth-child(2),
+.stats-table th:nth-child(2), .stats-table td:nth-child(2) { text-align: left; white-space: normal; }
+@media (max-width: 480px) {
+  .history-table, .stats-table { font-size: 0.8rem; }
+  .history-table th, .history-table td,
+  .stats-table th, .stats-table td { padding: 7px 4px; }
+  .history-table th, .stats-table th { font-size: 0.66rem; }
+}
