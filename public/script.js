@@ -272,17 +272,12 @@ function renderGame() {
           pot0 += money;
           return `
           <div class="player-row ${present ? '' : 'absent'}" data-pid="${pl.id}">
-            <div class="player-name">${esc(pl.name)}</div>
-            <label class="check" style="justify-self:end;">
-              <input type="checkbox" class="present" ${present ? 'checked' : ''}/> присутствует
-            </label>
-            <div class="player-controls">
-              <label>Место<input type="number" class="place" min="1" value="${cur && cur.place ? cur.place : ''}" /></label>
-              <label>Ребаи<input type="number" class="rebuys" min="0" value="${cur ? cur.rebuys : 0}" /></label>
-              <label class="check">Аддон<input type="checkbox" class="addon" ${cur && cur.addon ? 'checked' : ''}/></label>
-              <span class="spacer"></span>
-              <span class="player-money">${money} €</span>
-            </div>
+            <input type="checkbox" class="present" ${present ? 'checked' : ''} aria-label="Присутствует" />
+            <span class="player-name">${esc(pl.name)}</span>
+            <label class="field">Место<input type="number" class="place" min="1" max="10" value="${cur && cur.place ? cur.place : ''}" /></label>
+            <label class="field">Ребаи<input type="number" class="rebuys" min="0" value="${cur ? cur.rebuys : 0}" /></label>
+            <label class="field field-addon">Аддон<input type="checkbox" class="addon" ${cur && cur.addon ? 'checked' : ''}/></label>
+            <span class="player-money">${money} €</span>
           </div>`;
         }).join('')}
       </div>

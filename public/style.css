@@ -258,3 +258,55 @@ td.num, th.num { text-align: right; }
   .stats-table th, .stats-table td { padding: 7px 4px; }
   .history-table th, .stats-table th { font-size: 0.66rem; }
 }
+
+/* ---------- Текущая игра: участник в одну строку ---------- */
+/* Слева чекбокс присутствия, затем имя; поля «Место»/«Ребаи»/«Аддон»
+   (подписи на одной линии) и сумма сгруппированы справа. Под сумму
+   зарезервирована ширина под 3 цифры, чтобы ряд не смещался. */
+#tab-game .player-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0;
+}
+#tab-game .player-row .present {
+  width: auto;
+  margin: 0;
+  flex: 0 0 auto;
+  align-self: center;
+}
+#tab-game .player-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#tab-game .player-row .field {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+#tab-game .player-row .field input[type="number"] {
+  width: 42px;
+  text-align: center;
+  padding: 8px 4px;
+}
+#tab-game .player-row .field input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+#tab-game .player-row .field-addon input[type="checkbox"] {
+  margin-top: 8px; /* опустить чекбокс к уровню числовых полей */
+}
+#tab-game .player-money {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 56px; /* запас под 3-значную сумму (напр. «500 €»), чтобы ряд не дёргался */
+  text-align: right;
+}
